@@ -1,0 +1,1062 @@
+<?php
+// --- CONFIG ---
+$root = realpath('../'); // Set to your project root
+$startDir = isset($_GET['dir']) ? $_GET['dir'] : $root;
+$dir = realpath($startDir);
+if (!$dir || strpos($dir, $root) !== 0) $dir = $root; // Prevent directory traversal
+
+// --- Handle AJAX Actions ---
+header('Access-Control-Allow-Origin: *');
+if (isset($_POST['action'])) {
+    $response = ['success' => false];
+    switch ($_POST['action']) {
+        case 'list':
+            $path = realpath($_POST['path'] ?? $root);
+            if (!$path || strpos($path, $root) !== 0) $path = $root;
+            $items = scandir($path);
+            $result = [];
+            foreach ($items as $item) {
+                if ($item === '.' || $item === '..') continue;
+                $itemPath = $path . DIRECTORY_SEPARATOR . $item;
+                $result[] = [
+                    'text' => $item,
+                    'type' => is_dir($itemPath) ? 'folder' : 'file',
+                    'children' => is_dir($itemPath),
+                    'id' => $itemPath
+                ];
+            }
+            $response = $result;
+            break;
+        case 'create_folder':
+            $parent = realpath($_POST['parent'] ?? $root);
+            $name = trim($_POST['name']);
+            if ($parent && $name && strpos($parent, $root) === 0) {
+                $newPath = $parent . DIRECTORY_SEPARATOR . $name;
+                $response['success'] = mkdir($newPath);
+            }
+            break;
+        case 'rename':
+            $from = realpath($_POST['from']);
+            $to = dirname($from) . DIRECTORY_SEPARATOR . $_POST['to'];
+            if ($from && strpos($from, $root) === 0) {
+                $response['success'] = rename($from, $to);
+            }
+            break;
+        case 'delete':
+            $target = realpath($_POST['target']);
+            if ($target && strpos($target, $root) === 0) {
+                if (is_dir($target)) {
+                    $response['success'] = rmdir($target);
+                } else {
+                    $response['success'] = unlink($target);
+                }
+            }
+            break;
+        case 'upload':
+            $parent = realpath($_POST['parent'] ?? $root);
+            if ($parent && isset($_FILES['file']) && strpos($parent, $root) === 0) {
+                $target = $parent . DIRECTORY_SEPARATOR . basename($_FILES['file']['name']);
+                $response['success'] = move_uploaded_file($_FILES['file']['tmp_name'], $target);
+            }
+            break;
+        case 'download':
+            $file = realpath($_POST['file']);
+            if ($file && is_file($file) && strpos($file, $root) === 0) {
+                header('Content-Description: File Transfer');
+                header('Content-Type: application/octet-stream');
+                header('Content-Disposition: attachment; filename=' . basename($file));
+                readfile($file);
+                exit;
+            }
+            break;
+        case 'copy':
+            $from = realpath($_POST['from']);
+            $to = $_POST['to'];
+            if ($from && strpos($from, $root) === 0 && $to && strpos(dirname($to), $root) === 0) {
+                $response['success'] = copy($from, $to);
+            }
+            break;
+        case 'move':
+            $from = realpath($_POST['from']);
+            $to = $_POST['to'];
+            if ($from && strpos($from, $root) === 0 && $to && strpos(dirname($to), $root) === 0) {
+                $response['success'] = rename($from, $to);
+            }
+            break;
+    }
+    echo json_encode($response);
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileVault - Advanced File Manager</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f093fb;
+            --dark-bg: #1a1d29;
+            --sidebar-bg: #252836;
+            --card-bg: #2d3144;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a3bd;
+            --border-color: #393c54;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .nav-menu {
+            padding: 1.5rem 0;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-section-title {
+            padding: 0 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* Header */
+        .header {
+            background: var(--card-bg);
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .search-bar {
+            position: relative;
+            width: 400px;
+            max-width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            background: var(--dark-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-icon {
+            position: relative;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .header-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background: var(--error-color);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height) - 120px);
+        }
+
+        /* File Manager */
+        .file-manager {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-manager-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .file-manager-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            padding: 1rem 2rem;
+            background: var(--dark-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .breadcrumb-list {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-item {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .breadcrumb-item:hover {
+            color: var(--primary-color);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-primary);
+        }
+
+        /* File Grid */
+        .file-content {
+            padding: 2rem;
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .file-item {
+            background: var(--dark-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .file-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .file-icon.folder {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .file-icon.image {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .file-icon.document {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .file-icon.video {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+        }
+
+        .file-icon.audio {
+            background: linear-gradient(135deg, #fa709a, #fee140);
+        }
+
+        .file-icon.archive {
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+        }
+
+        .file-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .file-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .file-item:hover .file-item-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-subtext {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 2rem;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .footer-section p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .newsletter-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .newsletter-input {
+            flex: 1;
+            padding: 0.75rem;
+            background: var(--dark-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+        }
+
+        .newsletter-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            max-width: 400px;
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--error-color);
+        }
+
+        .notification.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .search-bar {
+                width: 250px;
+            }
+
+            .header {
+                padding: 0 1rem;
+            }
+
+            .content-area {
+                padding: 1rem;
+            }
+
+            .file-manager-header {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .file-content {
+                padding: 1rem;
+            }
+
+            .file-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .user-info {
+                display: none;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-cloud"></i>
+                    <span>Filemanager</span>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <a href="#" class="nav-item active">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-folder"></i>
+                        <span>Files</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Upload</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-share-alt"></i>
+                        <span>Shared</span>
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Storage</div>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-heart"></i>
+                        <span>Favorites</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Recent</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-trash"></i>
+                        <span>Trash</span>
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Account</div>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Analytics</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search files and folders...">
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="header-icon" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <button class="header-icon" id="settingsBtn">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <div class="user-profile" id="userProfile">
+                        <div class="user-avatar">psr</div>
+                        <div class="user-info">
+                            <div class="user-name">Chavad Psr</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- File Manager -->
+                <div class="file-manager">
+                    <div class="file-manager-header">
+                        <div class="file-manager-title">
+                            <i class="fas fa-folder-open"></i>
+                            <span>File Manager</span>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-primary" id="uploadBtn">
+                                <i class="fas fa-upload"></i>
+                                Upload Files
+                            </button>
+                            <button class="btn btn-secondary" id="newFolderBtn">
+                                <i class="fas fa-folder-plus"></i>
+                                New Folder
+                            </button>
+                            <button class="btn btn-secondary" id="viewToggle">
+                                <i class="fas fa-th"></i>
+                                Grid View
+                            </button>
+                        </div>
+                    </div>
+                    <div class="breadcrumb">
+                        <div class="breadcrumb-list">
+                            <a href="#" class="breadcrumb-item">
+                                <i class="fas fa-home"></i>
+                                Home
+                            </a>
+                            <i class="fas fa-chevron-right"></i>
+                            <a href="#" class="breadcrumb-item">Documents</a>
+                            <i class="fas fa-chevron-right"></i>
+                            <span class="breadcrumb-item active">Projects</span>
+                        </div>
+                    </div>
+                    <div class="file-content">
+                        <!-- Upload Area -->
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">Drag and drop files here</div>
+                            <div class="upload-subtext">or click to browse files</div>
+                            <input type="file" id="fileInput" multiple hidden>
+                        </div>
+                        <!-- File Grid -->
+                        <div class="file-grid" id="fileGrid">
+                            <!-- Sample Files -->
+                            <div class="file-item" data-type="folder">
+                                <div class="file-header">
+                                    <div class="file-icon folder">
+                                        <i class="fas fa-folder"></i>
+                                    </div>
+                                    <div class="file-info">
+                                        <h3>files & folder</h3>
+                                        <div class="file-meta">
+                                            <span>24 items</span>
+                                            <span>2 days ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="file-item-actions">
+                                    <button class="action-btn" title="Open">
+                                        <i class="fas fa-folder-open"></i>
+                                    </button>
+                                    <button class="action-btn" title="Share">
+                                        <i class="fas fa-share"></i>
+                                    </button>
+                                    <button class="action-btn" title="More">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="file-item" data-type="image">
+                                <div class="file-header">
+                                    <div class="file-icon image">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <div class="file-info">
+                                        <h3>images.jpg</h3>
+                                        <div class="file-meta">
+                                            <span>2.4 MB</span>
+                                            <span>1 hour ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="file-item-actions">
+                                    <button class="action-btn" title="Preview">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="action-btn" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="action-btn" title="More">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="file-item" data-type="document">
+                                <div class="file-header">
+                                    <div class="file-icon document">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="file-info">
+                                        <h3>document.pdf</h3>
+                                        <div class="file-meta">
+                                            <span>1.8 MB</span>
+                                            <span>3 hours ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="file-item-actions">
+                                    <button class="action-btn" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="action-btn" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="action-btn" title="More">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="file-item" data-type="video">
+                                <div class="file-header">
+                                    <div class="file-icon video">
+                                        <i class="fas fa-video"></i>
+                                    </div>
+                                    <div class="file-info">
+                                        <h3>videos.mp4</h3>
+                                        <div class="file-meta">
+                                            <span>45.2 MB</span>
+                                            <span>5 hours ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="file-item-actions">
+                                    <button class="action-btn" title="Play">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="action-btn" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="action-btn" title="More">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="file-item" data-type="audio">
+                                <div class="file-header">
+                                    <div class="file-icon audio">
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                    <div class="file-info">
+                                        <h3>new music.mp3</h3>
+                                        <div class="file-meta">
+                                            <span>3.7 MB</span>
+                                            <span>1 day ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="file-item-actions">
+                                    <button class="action-btn" title="Play">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="action-btn" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="action-btn" title="More">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Add more file items as needed -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+    <script src="assets/script.js"></script>

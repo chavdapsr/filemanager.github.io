@@ -1,0 +1,136 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f4f6f8;
+}
+
+.wrapper {
+    min-height: 100vh;
+}
+
+.file-manager {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+    width: 220px;
+    background: #232946;
+    color: #fff;
+    padding: 24px 0;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+}
+
+.sidebar h2 {
+  margin: 0 0 24px 24px;
+  font-size: 1.2em;
+  letter-spacing: 1px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  padding: 12px 24px;
+  cursor: pointer;
+  border-left: 4px solid transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.sidebar li.active,
+.sidebar li:hover {
+  background: #393e6e;
+  border-left: 4px solid #eebbc3;
+}
+
+.main-content {
+    flex: 1;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    background-color: #f1f2f5; /* Lighter background for main area */
+}
+
+.main-content header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.main-content h1 {
+  margin: 0;
+  font-size: 2em;
+  color: #232946;
+}
+
+#uploadBtn {
+  padding: 8px 20px;
+  background: #eebbc3;
+  border: none;
+  border-radius: 4px;
+  color: #232946;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#uploadBtn:hover {
+  background: #ffd6e0;
+}
+
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.file-item {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(35,41,70,0.04);
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.file-item.selected {
+  box-shadow: 0 4px 16px rgba(238,187,195,0.15);
+  border: 2px solid #eebbc3;
+  transform: translateY(-2px) scale(1.03);
+}
+
+.file-icon {
+  font-size: 2.5em;
+  margin-bottom: 8px;
+  color: #393e6e;
+}
+
+.file-name {
+  font-size: 1em;
+  color: #232946;
+  word-break: break-all;
+}
+
+/* Specific styles for the "Your Folders" cards */
+.card-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Hide sidebar on small screens initially */
+@media (max-width: 991.98px) {
+    .sidebar {
+        margin-left: -250px;
+        position: fixed;
+        height: 100vh;
+        z-index: 1000;
+    }
+    .sidebar.show {
+        margin-left: 0;
+    }
+}
