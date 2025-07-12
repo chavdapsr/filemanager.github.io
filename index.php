@@ -95,7 +95,7 @@ if (isset($_POST['action'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FileVault - Advanced File Manager</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="public/assets/style.css">
     <style>
         * {
             margin: 0;
@@ -1059,4 +1059,4 @@ if (isset($_POST['action'])) {
         </main>
     </div>
 </body>
-    <script src="assets/script.js"></script>
+    <script src="public/assets/script.js"></script>
