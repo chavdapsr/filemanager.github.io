@@ -1,2 +1,2 @@
-a midern php file manager incomplete working in currently 
-file manager in progress in currently 
+a modern php file manager incomplete working in currently 
+file namager is in progress working currently 
