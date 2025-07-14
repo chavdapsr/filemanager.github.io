@@ -1,102 +1,79 @@
-$(document).ready(function() {
-    // Chart.js for Activity Chart
-    const activityCtx = document.getElementById('activityChart').getContext('2d');
-    const activityChartData = <?php echo json_encode($activity_data); ?>;
-
-    new Chart(activityCtx, {
-        type: 'line',
-        data: {
-            labels: activityChartData.labels,
-            datasets: [{
-                label: 'Activity',
-                data: activityChartData.data,
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                tension: 0.4, // Makes the line curved
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0,0,0,0.05)'
-                    }
-                }
-            }
-        }
-    });
-
-    // Chart.js for Storage Chart (Doughnut/Pie chart for used storage)
-    const storageCtx = document.getElementById('storageChart').getContext('2d');
-    const storageDetails = <?php echo json_encode($storage_details); ?>;
-    const usedStorage = storageDetails.used;
-    const totalStorage = storageDetails.total;
-    const freeStorage = totalStorage - usedStorage;
-
-    new Chart(storageCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Used Storage', 'Free Storage'],
-            datasets: [{
-                data: [usedStorage, freeStorage],
-                backgroundColor: ['#007bff', '#e9ecef'],
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            cutout: '70%', // Make it a doughnut chart
-            plugins: {
-                legend: {
-                    display: false // Hide legend
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(tooltipItem) {
-                            return tooltipItem.label + ': ' + tooltipItem.raw + 'GB';
-                        }
-                    }
-                }
-            }
-        },
-        plugins: [{ // Plugin to display text in the center of the doughnut chart
-            id: 'centerText',
-            beforeDraw: function(chart) {
-                const width = chart.width,
-                    height = chart.height,
-                    ctx = chart.ctx;
-                ctx.restore();
-                const fontSize = (height / 114).toFixed(2);
-                ctx.font = fontSize + "em sans-serif";
-                ctx.textBaseline = "middle";
-                const text = `${usedStorage}GB`;
-                const text2 = `used of ${totalStorage}GB`;
-                const textX = Math.round((width - ctx.measureText(text).width) / 2);
-                const textY = height / 2 - 10;
-                ctx.fillText(text, textX, textY);
-                ctx.font = (fontSize * 0.5).toFixed(2) + "em sans-serif";
-                const text2X = Math.round((width - ctx.measureText(text2).width) / 2);
-                ctx.fillText(text2, text2X, textY + 20);
-                ctx.save();
-            }
-        }]
-    });
-
-    // Toggle sidebar on small screens
-    $('[data-bs-toggle="collapse"][data-bs-target="#sidebarCollapse"]').on('click', function() {
-        $('#sidebarCollapse').toggleClass('show');
-    });
+// Ripple effect for buttons
+document.querySelectorAll('button').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    this.appendChild(ripple);
+    const rect = this.getBoundingClientRect();
+    ripple.style.left = `${e.clientX - rect.left}px`;
+    ripple.style.top = `${e.clientY - rect.top}px`;
+    setTimeout(() => ripple.remove(), 600);
+  });
 });
+
+button {
+  position: relative;
+  overflow: hidden;
+}
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.2);
+  transform: scale(0);
+  animation: ripple 0.6s linear;
+  pointer-events: none;
+  width: 100px;
+  height: 100px;
+}
+@keyframes ripple {
+  to {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+// Animated menu toggle
+const menuBtn = document.getElementById('menu-btn');
+const menu = document.getElementById('side-menu');
+menuBtn.addEventListener('click', () => {
+  menu.classList.toggle('open');
+});
+
+#side-menu {
+  transition: transform 0.4s cubic-bezier(.68,-0.55,.27,1.55);
+  transform: translateX(-100%);
+}
+#side-menu.open {
+  transform: translateX(0);
+}
+
+.icon {
+  transition: transform 0.2s;
+}
+.icon:hover {
+  transform: scale(1.2) rotate(-10deg);
+}
+
+// Fade-in cards on scroll
+const cards = document.querySelectorAll('.card');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+});
+cards.forEach(card => observer.observe(card));
+
+.card {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.5s, transform 0.5s;
+}
+.card.visible {
+  opacity: 1;
+  transform: none;
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+  filter: brightness(0.9);
+}
