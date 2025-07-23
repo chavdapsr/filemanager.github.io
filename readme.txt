@@ -228,3 +228,27 @@ create and build a php file manager - key features
 23.file system maintenance 
 24.batch operation
 25.mass renaming 
+
+Create a comprehensive PHP file manager suitable for integration into websites. The file manager should allow users to perform common file operations such as uploading, downloading, renaming, deleting, and organizing files and directories securely within the website environment.
+
+Ensure the implementation includes:
+- User authentication check for secure access.
+- Prevention of unauthorized file access or directory traversal vulnerabilities.
+- Support for displaying files and folders in a clear, navigable interface.
+- Pagination or lazy loading if the number of files is large.
+- File upload functionality with size and type restrictions.
+- Option to create new folders and rename or delete existing files/folders.
+- Error handling and user-friendly messages.
+
+# Steps
+
+1. Set up a secure authentication mechanism to restrict access to authorized users only.
+2. Design a user interface that lists files and folders dynamically from the server directory.
+3. Implement file upload with validation on file type and size.
+4. Enable file operations: download, rename, delete, and create directories.
+5. Ensure proper server-side validation and sanitization to prevent security risks such as directory traversal.
+6. Provide clear feedback for user actions (success or error messages).
+
+# Output Format
+
+Provide the complete PHP source code files with embedded HTML/CSS/JavaScript as needed. Include inline comments explaining key sections of the code for clarity and maintainability.
