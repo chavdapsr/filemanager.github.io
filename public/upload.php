@@ -1,17 +1,13 @@
 <?php
-// Upload handler
-?><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Upload - PHP File Manager</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-    <h1>Upload File</h1>
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required><br>
-        <button type="submit">Upload</button>
-    </form>
-</body>
-</html>
+if ($_FILES['file']['name']) {
+    $uploadDir = 'uploads/';
+    $filename = basename($_FILES['file']['name']);
+    $target = $uploadDir . $filename;
+
+    if (move_uploaded_file($_FILES['file']['tmp_name'], $target)) {
+        echo "File uploaded successfully.";
+    } else {
+        echo "Upload failed.";
+    }
+}
+header('Location: index.php');

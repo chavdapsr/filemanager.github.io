@@ -1,0 +1,49 @@
+Create a comprehensive and secure PHP-based file manager designed for integration into websites. This file manager must support a wide range of advanced features, including but not limited to:
+
+1. Core file operations: uploading, downloading, renaming, deleting, and organizing files and directories.
+2. Undo/redo functionality for file operations.
+3. File compression and extraction (e.g., ZIP, TAR).
+4. File encryption and decryption capabilities.
+5. File previews for images, documents, and media.
+6. Tabbed and multi-panel interface for simultaneous file management views.
+7. Advanced search and filtering options based on file name, type, size, or modification date.
+8. Cloud and network storage integration support.
+9. File sharing with shareable link generation.
+10. Bookmarking and favorites for quick access.
+11. Customizable user interface themes and layouts.
+12. Detailed file and folder reports.
+13. Robust access control and user permissions management with role-based access.
+14. Execution ability for allowed executable files.
+15. Built-in code editor with syntax highlighting.
+16. Comprehensive security features including authentication, input sanitization, session management, and CSRF protection.
+17. User permissions and authentication checks restricting unauthorized access.
+18. Easy integration possibilities with other applications or websites.
+19. Fully responsive design supporting desktop and mobile devices.
+20. Version control and backup functionality.
+21. Storage management and quota enforcement.
+22. Recycle bin/trash management for recoverable deletions.
+23. File system maintenance tools.
+24. Batch operations including mass renaming, deleting, moving.
+
+Implement server-side validations to prevent directory traversal, unauthorized access, and malicious file uploads with file type and size restrictions.
+
+Ensure the user interface is clear and navigable, supporting pagination or lazy loading when handling large numbers of files. Provide user-friendly feedback messages and error handling for all actions.
+
+Include secure user authentication mechanisms enforcing strong password policies and session management.
+
+# Steps
+
+1. Build a secure authentication system limiting access to authorized users.
+2. Implement dynamic display of files and folders from the server directory.
+3. Add file upload functionality with strict validation on file types and sizes.
+4. Develop file operations: download, rename, delete, create directory, compress/extract, encrypt/decrypt, and executing permitted files.
+5. Embed undo/redo functionality for file operations.
+6. Integrate advanced search, filtering, bookmarking, file previews, and tabbed/multi-panel interfaces.
+7. Incorporate cloud and network storage integration.
+8. Ensure full responsiveness and customization options for the UI.
+9. Enforce detailed user roles and access permissions.
+10. Provide batch operation tools including mass renaming and deleting.
+
+# Output Format
+
+Provide complete PHP source code files including embedded HTML, CSS, and JavaScript as required. The code must be well-structured and include inline comments explaining key parts for clarity and maintainability. Structure the code to enable easy integration into existing PHP-based websites. Include necessary configuration and setup instructions if applicable.

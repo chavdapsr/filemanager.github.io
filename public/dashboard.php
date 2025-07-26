@@ -591,1481 +591,378 @@ $fm = new FileManager();
 $currentPath = Security::sanitizeInput($_GET['path'] ?? '');
 $csrfToken = Security::generateCSRFToken();
 
+?><?php
+// ...existing PHP logic above...
+
+// ...existing code...
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Manager Dashboard</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --sidebar-width: 250px;
+            --header-height: 60px;
         }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .header h1 {
-            color: #333;
-            font-size: 24px;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .login-form {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            margin: 100px auto;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        .btn {
-            background: #667eea;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-        
-        .btn:hover {
-            background: #5a67d8;
-        }
-        
-        .btn-danger {
-            background: #e53e3e;
-        }
-        
-        .btn-danger:hover {
-            background: #c53030;
-        }
-        
-        .btn-success {
-            background: #38a169;
-        }
-        
-        .btn-success:hover {
-            background: #2f855a;
-        }
-        
-        .dashboard {
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            gap: 20px;
-            height: calc(100vh - 140px);
-        }
-        
+        body { font-size: 14px; }
         .sidebar {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; overflow-y: auto; z-index: 1000;
         }
-        
-        .main-content {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+        .main-content { margin-left: var(--sidebar-width); min-height: 100vh; background-color: #f8f9fa; }
+        .top-header {
+            height: var(--header-height); background: white; border-bottom: 1px solid #e9ecef;
+            display: flex; align-items: center; padding: 0 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
+        .sidebar-header { padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-nav { padding: 1rem 0; }
+        .sidebar-nav .nav-link {
+            color: rgba(255,255,255,0.8); padding: 0.75rem 1.5rem; border: none;
+            display: flex; align-items: center; transition: all 0.3s ease;
         }
-        
-        .search-box {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-left: auto;
+        .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active {
+            background-color: rgba(255,255,255,0.1); color: white;
         }
-        
-        .search-box input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            width: 200px;
-        }
-        
-        .breadcrumb {
-            margin-bottom: 20px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        .breadcrumb a {
-            color: #667eea;
-            text-decoration: none;
-        }
-        
-        .breadcrumb a:hover {
-            text-decoration: underline;
-        }
-        
+        .sidebar-nav .nav-link i { margin-right: 0.75rem; font-size: 1.1rem; }
+        .breadcrumb { background: none; padding: 0; margin-bottom: 1rem; }
+        .breadcrumb-item a { color: #6c757d; text-decoration: none; }
+        .breadcrumb-item a:hover { color: #495057; }
         .file-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;
         }
-        
         .file-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #eee;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
+            background: white; border-radius: 8px; padding: 1.5rem; text-align: center;
+            border: 1px solid #e9ecef; transition: all 0.3s ease; cursor: pointer;
         }
-        
         .file-item:hover {
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
+            transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: #667eea;
         }
-        
-        .file-item.selected {
-            background: #e6f3ff;
-            border-color: #667eea;
+        .file-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+        .file-icon.folder { color: #ffc107; }
+        .file-icon.image { color: #28a745; }
+        .file-icon.document { color: #007bff; }
+        .file-icon.video { color: #dc3545; }
+        .file-icon.audio { color: #6f42c1; }
+        .file-icon.archive { color: #fd7e14; }
+        .file-icon.code { color: #20c997; }
+        .file-name { font-weight: 500; margin-bottom: 0.25rem; word-break: break-word; }
+        .file-meta { color: #6c757d; font-size: 0.875rem; }
+        .storage-info {
+            background: white; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;
         }
-        
-        .file-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-            color: #667eea;
+        .progress { height: 6px; }
+        .action-toolbar {
+            background: white; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+            display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
         }
-        
-        .file-name {
-            font-size: 12px;
-            word-break: break-word;
-            margin-bottom: 5px;
+        .view-toggle { margin-left: auto; }
+        .list-view .file-grid { display: block; }
+        .list-view .file-item {
+            display: flex; align-items: center; text-align: left; padding: 0.75rem 1rem; margin-bottom: 0.5rem;
         }
-        
-        .file-size {
-            font-size: 10px;
-            color: #666;
-        }
-        
-        .upload-area {
-            border: 2px dashed #ddd;
-            border-radius: 8px;
-            padding: 40px;
-            text-align: center;
-            margin-bottom: 20px;
-            transition: border-color 0.3s;
-        }
-        
-        .upload-area.dragover {
-            border-color: #667eea;
-            background: #f0f8ff;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-        }
-        
-        .modal-content {
-            background: white;
-            margin: 5% auto;
-            padding: 20px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .close {
-            font-size: 28px;
-            cursor: pointer;
-            color: #aaa;
-        }
-        
-        .close:hover {
-            color: #000;
-        }
-        
-        .error {
-            background: #fed7d7;
-            color: #c53030;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        
-        .success {
-            background: #c6f6d5;
-            color: #2f855a;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .context-menu {
-            position: fixed;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            min-width: 150px;
-            display: none;
-        }
-        
-        .context-menu-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .context-menu-item:hover {
-            background: #f8f9fa;
-        }
-        
-        .context-menu-item:last-child {
-            border-bottom: none;
-        }
-        
-        .editor-container {
-            height: 400px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        
-        .file-list {
-            display: grid;
-            grid-template-columns: 1fr 100px 120px;
-            gap: 10px;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            align-items: center;
-        }
-        
-        .file-list.header {
-            background: #f8f9fa;
-            font-weight: 500;
-        }
-        
-        .file-actions {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .file-actions button {
-            padding: 5px 8px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .file-actions button:hover {
-            background: #f8f9fa;
-        }
-        
+        .list-view .file-icon { font-size: 1.5rem; margin-right: 1rem; margin-bottom: 0; }
+        .list-view .file-info { flex: 1; }
+        .list-view .file-meta { margin-left: auto; display: flex; gap: 2rem; }
         @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr;
-            }
-            
-            .sidebar {
-                order: 2;
-            }
-            
-            .main-content {
-                order: 1;
-            }
-            
-            .toolbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .search-box {
-                margin-left: 0;
-            }
-            
-            .file-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            }
-        }
-        
-        .tree-view {
-            list-style: none;
-        }
-        
-        .tree-item {
-            padding: 5px 0;
-            cursor: pointer;
-        }
-        
-        .tree-item:hover {
-            background: #f8f9fa;
-        }
-        
-        .tree-item.active {
-            background: #e6f3ff;
-            color: #667eea;
-        }
-        
-        .tree-toggle {
-            display: inline-block;
-            width: 20px;
-            text-align: center;
-            cursor: pointer;
-        }
-        
-        .tree-children {
-            margin-left: 20px;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: #667eea;
-            transition: width 0.3s;
-        }
-        
-        .view-toggle {
-            display: flex;
-            gap: 5px;
-            margin-left: 10px;
-        }
-        
-        .view-toggle button {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        .view-toggle button.active {
-            background: #667eea;
-            color: white;
-        }
-        
-        .file-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .file-table th,
-        .file-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .file-table th {
-            background: #f8f9fa;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        
-        .file-table tr:hover {
-            background: #f8f9fa;
-        }
-        
-        .file-table .file-name {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .preview-container {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .preview-container img {
-            max-width: 100%;
-            max-height: 400px;
-            border-radius: 5px;
-        }
-        
-        .preview-container video {
-            max-width: 100%;
-            max-height: 400px;
-        }
-        
-        .no-preview {
-            color: #666;
-            font-style: italic;
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+            .sidebar.show { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .mobile-toggle { display: block !important; }
         }
     </style>
 </head>
 <body>
-    <?php if (!Auth::isLoggedIn()): ?>
-        <div class="container">
-            <form method="post" class="login-form">
-                <h2 style="text-align: center; margin-bottom: 20px;">File Manager Login</h2>
-                
-                <?php if (isset($error)): ?>
-                    <div class="error"><?php echo htmlspecialchars($error); ?></div>
-                <?php endif; ?>
-                
-                <div class="form-group">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" name="username" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
-                
-                <button type="submit" name="login" class="btn" style="width: 100%;">Login</button>
-                
-                <div style="margin-top: 20px; font-size: 12px; color: #666;">
-                    <strong>Demo Credentials:</strong><br>
-                    Username: admin | Password: password<br>
-                    Username: user | Password: password
-                </div>
-            </form>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h5 class="mb-0">
+                <i class="bi bi-folder-fill me-2"></i>File Manager
+            </h5>
         </div>
-    <?php else: ?>
-        <div class="container">
-            <div class="header">
-                <h1><i class="fas fa-folder"></i> File Manager Dashboard</h1>
-                <div class="user-info">
-                    <span>Welcome, <?php echo htmlspecialchars($_SESSION['name']); ?></span>
-                    <span class="badge"><?php echo htmlspecialchars($_SESSION['role']); ?></span>
-                    <a href="?logout" class="btn btn-danger">Logout</a>
+        <nav class="sidebar-nav">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" data-section="dashboard">
+                        <i class="bi bi-house-door"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-section="recent">
+                        <i class="bi bi-clock-history"></i>Recent Files
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-section="documents">
+                        <i class="bi bi-file-text"></i>Documents
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-section="images">
+                        <i class="bi bi-image"></i>Images
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-section="videos">
+                        <i class="bi bi-play-circle"></i>Videos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-section="music">
+                        <i class="bi bi-music-note"></i>Music
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-section="trash">
+                        <i class="bi bi-trash"></i>Trash
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="mt-auto p-3">
+            <div class="storage-info">
+                <div class="d-flex justify-content-between mb-2">
+                    <small>Storage Used</small>
+                    <small>75.2 GB / 100 GB</small>
                 </div>
-            </div>
-            
-            <div class="dashboard">
-                <div class="sidebar">
-                    <h3>Navigation</h3>
-                    <div id="treeView" class="tree-view">
-                        <div class="loading">Loading...</div>
-                    </div>
-                    
-                    <div style="margin-top: 20px;">
-                        <h4>Quick Actions</h4>
-                        <button class="btn" onclick="showUploadModal()" style="width: 100%; margin-bottom: 10px;">
-                            <i class="fas fa-upload"></i> Upload Files
-                        </button>
-                        <button class="btn" onclick="createDirectory()" style="width: 100%; margin-bottom: 10px;">
-                            <i class="fas fa-folder-plus"></i> New Folder
-                        </button>
-                        <button class="btn" onclick="createFile()" style="width: 100%;">
-                            <i class="fas fa-file-plus"></i> New File
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="main-content">
-                    <div class="toolbar">
-                        <button class="btn" onclick="goBack()">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </button>
-                        <button class="btn" onclick="refresh()">
-                            <i class="fas fa-sync"></i> Refresh
-                        </button>
-                        <button class="btn btn-success" onclick="showUploadModal()">
-                            <i class="fas fa-upload"></i> Upload
-                        </button>
-                        <button class="btn" onclick="createDirectory()">
-                            <i class="fas fa-folder-plus"></i> New Folder
-                        </button>
-                        
-                        <div class="view-toggle">
-                            <button id="gridView" class="active" onclick="switchView('grid')">
-                                <i class="fas fa-th"></i>
-                            </button>
-                            <button id="listView" onclick="switchView('list')">
-                                <i class="fas fa-list"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="search-box">
-                            <input type="text" id="searchInput" placeholder="Search files...">
-                            <button class="btn" onclick="searchFiles()">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="breadcrumb" id="breadcrumb">
-                        <a href="#" onclick="navigateTo('')">Home</a>
-                    </div>
-                    
-                    <div class="upload-area" id="uploadArea" style="display: none;">
-                        <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #ddd; margin-bottom: 20px;"></i>
-                        <p>Drag and drop files here or click to select</p>
-                        <input type="file" id="fileInput" multiple style="display: none;">
-                        <button class="btn" onclick="document.getElementById('fileInput').click()">
-                            Select Files
-                        </button>
-                    </div>
-                    
-                    <div id="fileContainer">
-                        <div class="file-grid" id="fileGrid">
-                            <div class="loading">Loading files...</div>
-                        </div>
-                        
-                        <div class="file-table-container" id="fileTable" style="display: none;">
-                            <table class="file-table">
-                                <thead>
-                                    <tr>
-                                        <th onclick="sortFiles('name')">Name <i class="fas fa-sort"></i></th>
-                                        <th onclick="sortFiles('size')">Size <i class="fas fa-sort"></i></th>
-                                        <th onclick="sortFiles('modified')">Modified <i class="fas fa-sort"></i></th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="fileTableBody">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: 75%"></div>
                 </div>
             </div>
         </div>
-        
-        <!-- Context Menu -->
-        <div id="contextMenu" class="context-menu">
-            <div class="context-menu-item" onclick="openFile()">
-                <i class="fas fa-eye"></i> Open
-            </div>
-            <div class="context-menu-item" onclick="editFile()">
-                <i class="fas fa-edit"></i> Edit
-            </div>
-            <div class="context-menu-item" onclick="downloadFile()">
-                <i class="fas fa-download"></i> Download
-            </div>
-            <div class="context-menu-item" onclick="renameFile()">
-                <i class="fas fa-edit"></i> Rename
-            </div>
-            <div class="context-menu-item" onclick="copyFile()">
-                <i class="fas fa-copy"></i> Copy
-            </div>
-            <div class="context-menu-item" onclick="deleteFile()">
-                <i class="fas fa-trash"></i> Delete
-            </div>
-            <div class="context-menu-item" onclick="showProperties()">
-                <i class="fas fa-info"></i> Properties
-            </div>
-        </div>
-        
-        <!-- Upload Modal -->
-        <div id="uploadModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Upload Files</h3>
-                    <span class="close" onclick="closeModal('uploadModal')">&times;</span>
-                </div>
-                <div class="upload-area" id="modalUploadArea">
-                    <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #ddd; margin-bottom: 20px;"></i>
-                    <p>Drag and drop files here or click to select</p>
-                    <input type="file" id="modalFileInput" multiple>
-                    <button class="btn" onclick="document.getElementById('modalFileInput').click()">
-                        Select Files
+    </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="top-header">
+            <button class="btn btn-outline-secondary d-md-none me-3 mobile-toggle" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+            <nav aria-label="breadcrumb" class="flex-grow-1">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="#"><i class="bi bi-house-door"></i></a></li>
+                    <li class="breadcrumb-item"><a href="#">Documents</a></li>
+                    <li class="breadcrumb-item active">Projects</li>
+                </ol>
+            </nav>
+            <div class="d-flex align-items-center">
+                <div class="input-group me-3" style="width: 300px;">
+                    <input type="text" class="form-control" placeholder="Search files...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="bi bi-search"></i>
                     </button>
                 </div>
-                <div id="uploadProgress" style="display: none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+        <!-- Content Area -->
+        <div class="p-4">
+            <!-- Action Toolbar -->
+            <div class="action-toolbar">
+                <button class="btn btn-primary">
+                    <i class="bi bi-cloud-upload me-2"></i>Upload
+                </button>
+                <button class="btn btn-outline-primary">
+                    <i class="bi bi-folder-plus me-2"></i>New Folder
+                </button>
+                <button class="btn btn-outline-secondary">
+                    <i class="bi bi-download me-2"></i>Download
+                </button>
+                <button class="btn btn-outline-danger">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
+                <div class="view-toggle">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" onclick="setView('grid')">
+                            <i class="bi bi-grid-3x3-gap"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="setView('list')">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
                     </div>
-                    <div id="uploadStatus"></div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn" onclick="closeModal('uploadModal')">Close</button>
-                    <button class="btn btn-success" onclick="uploadFiles()">Upload</button>
+            </div>
+            <!-- File Grid -->
+            <div class="file-grid" id="fileGrid">
+                <!-- Example Folders -->
+                <div class="file-item" ondblclick="openFolder('Projects')">
+                    <div class="file-icon folder">
+                        <i class="bi bi-folder-fill"></i>
+                    </div>
+                    <div class="file-name">Projects</div>
+                    <div class="file-meta">12 items</div>
+                </div>
+                <div class="file-item" ondblclick="openFolder('Documents')">
+                    <div class="file-icon folder">
+                        <i class="bi bi-folder-fill"></i>
+                    </div>
+                    <div class="file-name">Documents</div>
+                    <div class="file-meta">8 items</div>
+                </div>
+                <div class="file-item" ondblclick="openFolder('Images')">
+                    <div class="file-icon folder">
+                        <i class="bi bi-folder-fill"></i>
+                    </div>
+                    <div class="file-name">Images</div>
+                    <div class="file-meta">156 items</div>
+                </div>
+                <!-- Example Files -->
+                <div class="file-item">
+                    <div class="file-icon document">
+                        <i class="bi bi-file-text-fill"></i>
+                    </div>
+                    <div class="file-name">Report_2024.docx</div>
+                    <div class="file-meta">2.3 MB • 2 days ago</div>
+                </div>
+                <div class="file-item">
+                    <div class="file-icon image">
+                        <i class="bi bi-file-image-fill"></i>
+                    </div>
+                    <div class="file-name">presentation.pdf</div>
+                    <div class="file-meta">5.7 MB • 1 week ago</div>
+                </div>
+                <div class="file-item">
+                    <div class="file-icon code">
+                        <i class="bi bi-file-code-fill"></i>
+                    </div>
+                    <div class="file-name">app.js</div>
+                    <div class="file-meta">42 KB • 3 hours ago</div>
+                </div>
+                <div class="file-item">
+                    <div class="file-icon video">
+                        <i class="bi bi-file-play-fill"></i>
+                    </div>
+                    <div class="file-name">demo_video.mp4</div>
+                    <div class="file-meta">125 MB • 5 days ago</div>
+                </div>
+                <div class="file-item">
+                    <div class="file-icon archive">
+                        <i class="bi bi-file-zip-fill"></i>
+                    </div>
+                    <div class="file-name">backup.zip</div>
+                    <div class="file-meta">89 MB • 1 month ago</div>
+                </div>
+                <div class="file-item">
+                    <div class="file-icon audio">
+                        <i class="bi bi-file-music-fill"></i>
+                    </div>
+                    <div class="file-name">podcast_ep1.mp3</div>
+                    <div class="file-meta">15 MB • 2 weeks ago</div>
+                </div>
+                <div class="file-item">
+                    <div class="file-icon document">
+                        <i class="bi bi-file-excel-fill"></i>
+                    </div>
+                    <div class="file-name">budget_2024.xlsx</div>
+                    <div class="file-meta">1.2 MB • 4 days ago</div>
+                </div>
+                <div class="file-item">
+                    <div class="file-icon image">
+                        <i class="bi bi-file-image-fill"></i>
+                    </div>
+                    <div class="file-name">logo_design.png</div>
+                    <div class="file-meta">890 KB • 1 day ago</div>
                 </div>
             </div>
         </div>
-        
-        <!-- Edit File Modal -->
-        <div id="editModal" class="modal">
-            <div class="modal-content" style="width: 95%; max-width: 1000px;">
-                <div class="modal-header">
-                    <h3>Edit File: <span id="editFileName"></span></h3>
-                    <span class="close" onclick="closeModal('editModal')">&times;</span>
-                </div>
-                <div class="editor-container">
-                    <textarea id="fileEditor"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn" onclick="closeModal('editModal')">Close</button>
-                    <button class="btn btn-success" onclick="saveFile()">Save</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Preview Modal -->
-        <div id="previewModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Preview: <span id="previewFileName"></span></h3>
-                    <span class="close" onclick="closeModal('previewModal')">&times;</span>
-                </div>
-                <div id="previewContainer" class="preview-container">
-                    <div class="loading">Loading preview...</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Properties Modal -->
-        <div id="propertiesModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Properties</h3>
-                    <span class="close" onclick="closeModal('propertiesModal')">&times;</span>
-                </div>
-                <div id="propertiesContent"></div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/php/php.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentPath = '';
-        let selectedFile = null;
-        let fileList = [];
-        let currentView = 'grid';
-        let sortBy = 'name';
-        let sortOrder = 'asc';
-        let editor = null;
-        
-        const csrfToken = '<?php echo $csrfToken; ?>';
-        
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDirectory('');
-            loadTreeView();
-            setupEventListeners();
-            setupDragAndDrop();
+        // Toggle sidebar on mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-toggle');
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target) && 
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
         });
-        
-        // Setup event listeners
-        function setupEventListeners() {
-            document.getElementById('searchInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchFiles();
-                }
+        // Navigation handling
+        document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                const section = this.getAttribute('data-section');
+                console.log('Loading section:', section);
             });
-            
-            document.getElementById('fileInput').addEventListener('change', function() {
-                showUploadArea();
-            });
-            
-            document.getElementById('modalFileInput').addEventListener('change', function() {
-                uploadFiles();
-            });
-            
-            // Hide context menu on click
-            document.addEventListener('click', function() {
-                document.getElementById('contextMenu').style.display = 'none';
-            });
-            
-            // Prevent context menu from closing when clicking inside it
-            document.getElementById('contextMenu').addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        }
-        
-        // Setup drag and drop
-        function setupDragAndDrop() {
-            const uploadArea = document.getElementById('uploadArea');
-            const modalUploadArea = document.getElementById('modalUploadArea');
+        });
+        // View toggle functionality
+        function setView(viewType) {
             const fileGrid = document.getElementById('fileGrid');
-            
-            [uploadArea, modalUploadArea, fileGrid].forEach(area => {
-                area.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    this.classList.add('dragover');
-                });
-                
-                area.addEventListener('dragleave', function(e) {
-                    e.preventDefault();
-                    this.classList.remove('dragover');
-                });
-                
-                area.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    this.classList.remove('dragover');
-                    
-                    const files = e.dataTransfer.files;
-                    if (files.length > 0) {
-                        handleFileDrop(files);
-                    }
-                });
-            });
+            const buttons = document.querySelectorAll('.view-toggle .btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            if (viewType === 'list') {
+                fileGrid.parentElement.classList.add('list-view');
+                buttons[1].classList.add('active');
+            } else {
+                fileGrid.parentElement.classList.remove('list-view');
+                buttons[0].classList.add('active');
+            }
         }
-        
-        // Handle file drop
-        function handleFileDrop(files) {
-            const fileInput = document.getElementById('modalFileInput');
-            fileInput.files = files;
-            showUploadModal();
+        // Folder navigation
+        function openFolder(folderName) {
+            const breadcrumb = document.querySelector('.breadcrumb');
+            const newItem = document.createElement('li');
+            newItem.className = 'breadcrumb-item active';
+            newItem.textContent = folderName;
+            const activeItem = breadcrumb.querySelector('.active');
+            if (activeItem) {
+                activeItem.classList.remove('active');
+                const link = document.createElement('a');
+                link.href = '#';
+                link.textContent = activeItem.textContent;
+                activeItem.innerHTML = '';
+                activeItem.appendChild(link);
+            }
+            breadcrumb.appendChild(newItem);
+            console.log('Opening folder:', folderName);
         }
-        
-        // Load directory contents
-        function loadDirectory(path) {
-            currentPath = path;
-            updateBreadcrumb();
-            
-            fetch('', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    action: 'list',
-                    path: path,
-                    csrf_token: csrfToken
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    fileList = data.items;
-                    displayFiles();
+        // File selection
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.file-item')) {
+                const fileItem = e.target.closest('.file-item');
+                if (e.ctrlKey || e.metaKey) {
+                    fileItem.classList.toggle('selected');
                 } else {
-                    showError('Failed to load directory');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showError('Network error occurred');
-            });
-        }
-        
-        // Display files in current view
-        function displayFiles() {
-            if (currentView === 'grid') {
-                displayGridView();
-            } else {
-                displayListView();
-            }
-        }
-        
-        // Display grid view
-        function displayGridView() {
-            const fileGrid = document.getElementById('fileGrid');
-            const fileTable = document.getElementById('fileTable');
-            
-            fileGrid.style.display = 'grid';
-            fileTable.style.display = 'none';
-            
-            if (fileList.length === 0) {
-                fileGrid.innerHTML = '<div class="no-files">No files found</div>';
-                return;
-            }
-            
-            fileGrid.innerHTML = fileList.map(file => {
-                const icon = getFileIcon(file.type, file.extension);
-                const size = file.type === 'directory' ? '' : formatFileSize(file.size);
-                
-                return `
-                    <div class="file-item" data-path="${file.path}" data-type="${file.type}" 
-                         onclick="selectFile('${file.path}', '${file.type}')" 
-                         oncontextmenu="showContextMenu(event, '${file.path}', '${file.type}')">
-                        <div class="file-icon">${icon}</div>
-                        <div class="file-name">${file.name}</div>
-                        <div class="file-size">${size}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        // Display list view
-        function displayListView() {
-            const fileGrid = document.getElementById('fileGrid');
-            const fileTable = document.getElementById('fileTable');
-            const tableBody = document.getElementById('fileTableBody');
-            
-            fileGrid.style.display = 'none';
-            fileTable.style.display = 'block';
-            
-            if (fileList.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4">No files found</td></tr>';
-                return;
-            }
-            
-            tableBody.innerHTML = fileList.map(file => {
-                const icon = getFileIcon(file.type, file.extension);
-                const size = file.type === 'directory' ? '-' : formatFileSize(file.size);
-                const modified = new Date(file.modified * 1000).toLocaleDateString();
-                
-                return `
-                    <tr data-path="${file.path}" data-type="${file.type}"
-                        onclick="selectFile('${file.path}', '${file.type}')"
-                        oncontextmenu="showContextMenu(event, '${file.path}', '${file.type}')">
-                        <td>
-                            <div class="file-name">
-                                <span class="file-icon">${icon}</span>
-                                ${file.name}
-                            </div>
-                        </td>
-                        <td>${size}</td>
-                        <td>${modified}</td>
-                        <td>
-                            <div class="file-actions">
-                                <button onclick="event.stopPropagation(); selectFile('${file.path}', '${file.type}'); openFile()" title="Open">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button onclick="event.stopPropagation(); selectFile('${file.path}', '${file.type}'); downloadFile()" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button onclick="event.stopPropagation(); selectFile('${file.path}', '${file.type}'); deleteFile()" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-        
-        // Get file icon based on type and extension
-        function getFileIcon(type, extension) {
-            if (type === 'directory') {
-                return '<i class="fas fa-folder"></i>';
-            }
-            
-            const iconMap = {
-                'txt': 'fas fa-file-alt',
-                'php': 'fab fa-php',
-                'html': 'fab fa-html5',
-                'css': 'fab fa-css3',
-                'js': 'fab fa-js',
-                'json': 'fas fa-file-code',
-                'xml': 'fas fa-file-code',
-                'md': 'fab fa-markdown',
-                'jpg': 'fas fa-image',
-                'jpeg': 'fas fa-image',
-                'png': 'fas fa-image',
-                'gif': 'fas fa-image',
-                'pdf': 'fas fa-file-pdf',
-                'zip': 'fas fa-file-archive',
-                'tar': 'fas fa-file-archive',
-                'gz': 'fas fa-file-archive'
-            };
-            
-            const iconClass = iconMap[extension] || 'fas fa-file';
-            return `<i class="${iconClass}"></i>`;
-        }
-        
-        // Format file size
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        // Select file
-        function selectFile(path, type) {
-            selectedFile = { path: path, type: type };
-            
-            // Remove previous selection
-            document.querySelectorAll('.file-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            
-            // Add selection to current item
-            const item = document.querySelector(`[data-path="${path}"]`);
-            if (item) {
-                item.classList.add('selected');
-            }
-        }
-        
-        // Navigate to directory
-        function navigateTo(path) {
-            if (selectedFile && selectedFile.type === 'directory') {
-                loadDirectory(selectedFile.path);
-            } else {
-                loadDirectory(path);
-            }
-        }
-        
-        // Go back to parent directory
-        function goBack() {
-            if (currentPath) {
-                const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
-                loadDirectory(parentPath);
-            }
-        }
-        
-        // Refresh current directory
-        function refresh() {
-            loadDirectory(currentPath);
-        }
-        
-        // Update breadcrumb navigation
-        function updateBreadcrumb() {
-            const breadcrumb = document.getElementById('breadcrumb');
-            
-            if (!currentPath) {
-                breadcrumb.innerHTML = '<a href="#" onclick="navigateTo(\'\')">Home</a>';
-                return;
-            }
-            
-            const parts = currentPath.split('/');
-            let html = '<a href="#" onclick="navigateTo(\'\')">Home</a>';
-            let path = '';
-            
-            parts.forEach((part, index) => {
-                if (part) {
-                    path += (path ? '/' : '') + part;
-                    html += ' / <a href="#" onclick="navigateTo(\'' + path + '\')">' + part + '</a>';
-                }
-            });
-            
-            breadcrumb.innerHTML = html;
-        }
-        
-        // Switch view between grid and list
-        function switchView(view) {
-            currentView = view;
-            
-            document.getElementById('gridView').classList.toggle('active', view === 'grid');
-            document.getElementById('listView').classList.toggle('active', view === 'list');
-            
-            displayFiles();
-        }
-        
-        // Show context menu
-        function showContextMenu(event, path, type) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            selectFile(path, type);
-            
-            const contextMenu = document.getElementById('contextMenu');
-            contextMenu.style.display = 'block';
-            contextMenu.style.left = event.pageX + 'px';
-            contextMenu.style.top = event.pageY + 'px';
-        }
-        
-        // Open file
-        function openFile() {
-            if (!selectedFile) return;
-            
-            if (selectedFile.type === 'directory') {
-                loadDirectory(selectedFile.path);
-            } else {
-                const extension = selectedFile.path.split('.').pop().toLowerCase();
-                const imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                const textExtensions = ['txt', 'php', 'html', 'css', 'js', 'json', 'xml', 'md'];
-                
-                if (imageExtensions.includes(extension)) {
-                    previewFile();
-                } else if (textExtensions.includes(extension)) {
-                    editFile();
-                } else {
-                    downloadFile();
-                }
-            }
-        }
-        
-        // Edit file
-        function editFile() {
-            if (!selectedFile || selectedFile.type === 'directory') return;
-            
-            fetch('', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    action: 'read_file',
-                    path: selectedFile.path,
-                    csrf_token: csrfToken
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('editFileName').textContent = selectedFile.path.split('/').pop();
-                    document.getElementById('editModal').style.display = 'block';
-                    
-                    // Initialize CodeMirror editor
-                    if (editor) {
-                        editor.toTextArea();
-                    }
-                    
-                    const textarea = document.getElementById('fileEditor');
-                    textarea.value = data.content;
-                    
-                    const extension = selectedFile.path.split('.').pop().toLowerCase();
-                    const mode = getModeForExtension(extension);
-                    
-                    editor = CodeMirror.fromTextArea(textarea, {
-                        lineNumbers: true,
-                        mode: mode,
-                        theme: 'monokai',
-                        indentUnit: 4,
-                        lineWrapping: true
+                    document.querySelectorAll('.file-item.selected').forEach(item => {
+                        item.classList.remove('selected');
                     });
-                    
-                    editor.setSize(null, 400);
-                } else {
-                    showError('Failed to read file');
+                    fileItem.classList.add('selected');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showError('Network error occurred');
-            });
-        }
-        
-        // Get CodeMirror mode for file extension
-        function getModeForExtension(extension) {
-            const modeMap = {
-                'php': 'php',
-                'html': 'htmlmixed',
-                'css': 'css',
-                'js': 'javascript',
-                'json': 'javascript',
-                'xml': 'xml'
-            };
-            
-            return modeMap[extension] || 'text';
-        }
-        
-        // Save file
-        function saveFile() {
-            if (!selectedFile || !editor) return;
-            
-            const content = editor.getValue();
-            
-            fetch('', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    action: 'write_file',
-                    path: selectedFile.path,
-                    content: content,
-                    csrf_token: csrfToken
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSuccess('File saved successfully');
-                    closeModal('editModal');
-                } else {
-                    showError('Failed to save file');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showError('Network error occurred');
-            });
-        }
-        
-        // Preview file
-        function previewFile() {
-            if (!selectedFile || selectedFile.type === 'directory') return;
-            const extension = selectedFile.path.split('.').pop().toLowerCase();
-            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-            const videoExtensions = ['mp4', 'webm', 'ogg'];
-            const audioExtensions = ['mp3', 'wav', 'ogg'];
-
-            document.getElementById('previewFileName').textContent = selectedFile.path.split('/').pop();
-            document.getElementById('previewModal').style.display = 'block';
-            const previewContainer = document.getElementById('previewContainer');
-            previewContainer.innerHTML = '<div class="loading">Loading preview...</div>';
-
-            if (imageExtensions.includes(extension)) {
-                previewContainer.innerHTML = `<img src="${selectedFile.path}" alt="Preview">`;
-            } else if (videoExtensions.includes(extension)) {
-                previewContainer.innerHTML = `<video controls src="${selectedFile.path}"></video>`;
-            } else if (audioExtensions.includes(extension)) {
-                previewContainer.innerHTML = `<audio controls src="${selectedFile.path}"></audio>`;
-            } else {
-                // For text files, fetch content
-                fetch('', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        action: 'read_file',
-                        path: selectedFile.path,
-                        csrf_token: csrfToken
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        previewContainer.innerHTML = `<pre style="text-align:left;white-space:pre-wrap;">${escapeHtml(data.content)}</pre>`;
-                    } else {
-                        previewContainer.innerHTML = '<div class="no-preview">No preview available</div>';
-                    }
-                })
-                .catch(() => {
-                    previewContainer.innerHTML = '<div class="no-preview">No preview available</div>';
-                });
             }
-        }
-
-        // Show error message
-        function showError(msg) {
-            const el = document.createElement('div');
-            el.className = 'error';
-            el.textContent = msg;
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
-
-        // Show success message
-        function showSuccess(msg) {
-            const el = document.createElement('div');
-            el.className = 'success';
-            el.textContent = msg;
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
-
-        // Close modal
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        // Show upload modal
-        function showUploadModal() {
-            document.getElementById('uploadModal').style.display = 'block';
-        }
-
-        // Show upload area
-        function showUploadArea() {
-            document.getElementById('uploadArea').style.display = 'block';
-        }
-
-        // Upload files
-        function uploadFiles() {
-            const input = document.getElementById('modalFileInput');
-            const files = input.files;
-            if (!files.length) return;
-            const formData = new FormData();
-            formData.append('action', 'upload');
-            formData.append('path', currentPath);
-            formData.append('csrf_token', csrfToken);
-            for (let i = 0; i < files.length; i++) {
-                formData.append('files[]', files[i]);
+        });
+        // Add selected styling
+        const style = document.createElement('style');
+        style.textContent = `
+            .file-item.selected {
+                background-color: #e7f3ff !important;
+                border-color: #007bff !important;
             }
-            document.getElementById('uploadProgress').style.display = 'block';
-            fetch('', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('uploadProgress').style.display = 'none';
-                if (data.success) {
-                    showSuccess('Files uploaded successfully');
-                    closeModal('uploadModal');
-                    refresh();
-                } else {
-                    showError('Failed to upload files');
-                }
-            })
-            .catch(() => {
-                document.getElementById('uploadProgress').style.display = 'none';
-                showError('Network error occurred');
-            });
-        }
-
-        // Escape HTML for preview
-        function escapeHtml(text) {
-            var map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-        }
-
-        // Create directory
-        function createDirectory() {
-            const name = prompt('Enter folder name:');
-            if (!name) return;
-            fetch('', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    action: 'create_directory',
-                    path: currentPath,
-                    name: name,
-                    csrf_token: csrfToken
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSuccess('Folder created successfully');
-                    refresh();
-                } else {
-                    showError('Failed to create folder');
-                }
-            })
-            .catch(() => showError('Network error occurred'));
-        }
-
-        // Create file
-        function createFile() {
-            const name = prompt('Enter file name:');
-            if (!name) return;
-            fetch('', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    action: 'write_file',
-                    path: (currentPath ? currentPath + '/' : '') + name,
-                    content: '',
-                    csrf_token: csrfToken
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSuccess('File created successfully');
-                    refresh();
-                } else {
-                    showError('Failed to create file');
-                }
-            })
-            .catch(() => showError('Network error occurred'));
-        }
-
-        // Download file
-        function downloadFile() {
-            if (!selectedFile || selectedFile.type === 'directory') return;
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.style.display = 'none';
-            form.innerHTML = `
-                <input type="hidden" name="action" value="download">
-                <input type="hidden" name="path" value="${selectedFile.path}">
-                <input type="hidden" name="csrf_token" value="${csrfToken}">
-            `;
-            document.body.appendChild(form);
-            form.submit();
-            form.remove();
-        }
-
-        // Delete file
-        function deleteFile() {
-            if (!selectedFile) return;
-            if (!confirm('Are you sure you want to delete this item?')) return;
-            fetch('', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    action: 'delete',
-                    path: selectedFile.path,
-                    csrf_token: csrfToken
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSuccess('Deleted successfully');
-                    refresh();
-                } else {
-                    showError('Failed to delete');
-                }
-            })
-            .catch(() => showError('Network error occurred'));
-        }
-
-        // Rename file
-        function renameFile() {
-            if (!selectedFile) return;
-            const newName = prompt('Enter new name:', selectedFile.path.split('/').pop());
-            if (!newName) return;
-            fetch('', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    action: 'rename',
-                    path: selectedFile.path,
-                    new_name: newName,
-                    csrf_token: csrfToken
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSuccess('Renamed successfully');
-                    refresh();
-                } else {
-                    showError('Failed to rename');
-                }
-            })
-            .catch(() => showError('Network error occurred'));
-        }
-
-        // Copy file
-        function copyFile() {
-            // Implement as needed (could use clipboard logic)
-            showSuccess('Copy feature coming soon!');
-        }
-
-        // Show properties
-        function showProperties() {
-            if (!selectedFile) return;
-            document.getElementById('propertiesModal').style.display = 'block';
-            document.getElementById('propertiesContent').innerHTML = `
-                <strong>Path:</strong> ${selectedFile.path}<br>
-                <strong>Type:</strong> ${selectedFile.type}
-            `;
-        }
-
-        // Search files
-        function searchFiles() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (!query) return refresh();
-            fetch('', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    action: 'search',
-                    query: query,
-                    path: currentPath,
-                    csrf_token: csrfToken
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    fileList = data.results;
-                    displayFiles();
-                } else {
-                    showError('Search failed');
-                }
-            })
-            .catch(() => showError('Network error occurred'));
-        }
-
-        // Load tree view (optional, can be implemented as needed)
-        function loadTreeView() {
-            // Placeholder for tree view logic
-            document.getElementById('treeView').innerHTML = '<div class="no-preview">Tree view coming soon!</div>';
-        }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
+// ...existing code...
