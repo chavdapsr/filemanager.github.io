@@ -1,0 +1,12 @@
+{
+    "success": true,
+    "files": [
+        {
+            "name": "filename.txt",
+            "type": "file",
+            "size": 1024,
+            "path": "/path/to/file"
+        }
+    ],
+    "error": "Error message if failed"
+}
